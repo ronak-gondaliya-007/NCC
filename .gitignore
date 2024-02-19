@@ -1,0 +1,12 @@
+# Ignore environment-specific files
+.env.local
+.env.development
+
+# Ignore log files
+logs
+
+# Ignore Node.js modules
+node_modules/
+
+# Ignore the compiled/dist files
+dist
