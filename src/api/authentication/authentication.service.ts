@@ -43,7 +43,7 @@ class AuthenticationService {
 
         return res
             .status(200)
-            .json({ code: 400, message: 'User account created successfully.', success: true, data: user });
+            .json({ code: 200, message: 'User account created successfully.', success: true, data: user });
     }
 
     /** Request for reset password mail */
@@ -90,7 +90,7 @@ class AuthenticationService {
 
         return res
             .status(200)
-            .json({ message: 'Email has been sent successfully.', success: true, data: { email: payload.email?.toLowerCase() } });
+            .json({ code: 200, message: 'Email has been sent successfully.', success: true, data: { email: payload.email?.toLowerCase() } });
     }
 
     /** Update password via reset password link */
@@ -107,7 +107,7 @@ class AuthenticationService {
         }
 
         if (user?.forgotPasswordToken !== payload.emailToken) {
-            return res.status(400).json({ message: 'Reset password link does not exists.', success: true, data: {} });
+            return res.status(200).json({ code: 400, message: 'Reset password link does not exists.', success: true, data: {} });
         }
 
         const verifiedPassword = await CommonService.comparePassword(payload.newPassword, user?.password);
@@ -120,8 +120,8 @@ class AuthenticationService {
 
         if (payload.newPassword !== payload.confirmPassword) {
             return res
-                .status(400)
-                .json({ message: 'New password must be the same as confirm password.', success: true, data: {} });
+                .status(200)
+                .json({ code: 400, message: 'New password must be the same as confirm password.', success: true, data: {} });
         }
 
         const encrytedPassword: any = await CommonService.hashPassword(payload.newPassword);
@@ -133,7 +133,7 @@ class AuthenticationService {
             options: { new: true },
         });
 
-        return res.status(200).json({ message: 'Password changed successfully.', success: true, data: {} });
+        return res.status(200).json({ code: 200, message: 'Password changed successfully.', success: true, data: {} });
     }
 
     /** Login */
@@ -143,7 +143,7 @@ class AuthenticationService {
         // Validate Email Address
         const validate = await CommonService.validateEmail(payload.email?.toLowerCase());
         if (!validate) {
-            return res.status(400).json({ message: 'Invalid Email Address.', error: true, data: {} });
+            return res.status(200).json({ code: 400, message: 'Invalid Email Address.', error: true, data: {} });
         }
 
         const user = await findOne({
@@ -152,30 +152,32 @@ class AuthenticationService {
         });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not exists at this moment.', error: true, data: {} });
+            return res.status(200).json({ code: 404, message: 'User not exists at this moment.', error: true, data: {} });
         }
 
         const verifyPassword = await CommonService.comparePassword(payload.password, user?.password);
 
         if (!verifyPassword) {
-            return res.status(404).json({ message: 'Email or Password is incorrect.', error: true, data: {} });
+            return res.status(200).json({ code: 404, message: 'Email or Password is incorrect.', error: true, data: {} });
         }
 
         const accessToken = await CommonService.issueToken({
-            id: user?._id,
+            userId: user?._id,
             email: user?.email,
             role: user?.role,
-            schoolId: user?.schoolId?._id,
-            schoolName: user?.schoolId?.schoolName,
         });
         // const encryptAuthToken = await middleware.encryptAuthData(accessToken);
 
         const result: object = {
-            user,
+            _id:user._id,
+            firstName:user.firstName,
+            lastName:user.lastName,
+            email:user.email,
+            profilePic:user.profilePic,
             accessToken: accessToken,
         };
 
-        return res.status(200).json({ message: 'User login successfully.', success: true, data: result });
+        return res.status(200).json({ code: 200, message: 'User login successfully.', success: true, data: result });
     }
 
     /** Change password */
@@ -207,7 +209,7 @@ class AuthenticationService {
         const verifyPassword = await CommonService.comparePassword(payload.oldPassword, user?.password);
 
         if (!verifyPassword) {
-            return res.status(400).json({ message: 'Old password do not match.', error: true, data: {} });
+            return res.status(200).json({ cd: 400, message: 'Old password do not match.', error: true, data: {} });
         }
 
         const encryptPassword = await CommonService.hashPassword(payload.newPassword);
@@ -221,7 +223,7 @@ class AuthenticationService {
             options: { new: true },
         });
 
-        return res.status(200).json({ message: 'Password Changed Successfully.', success: true, data: {} });
+        return res.status(200).json({ code: 200, message: 'Password Changed Successfully.', success: true, data: {} });
     }
 }
 
