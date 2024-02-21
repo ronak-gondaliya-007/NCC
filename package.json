@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.ts",
   "scripts": {
-    "start": "cross-env ENVIRONMENT=Local node dist/server.js",
+    "start": "cross-env ENV_FILE=Local node dist/server.js",
     "dev": "cross-env ENV_FILE=.env.local nodemon src/server.ts",
     "start-development": "cross-env ENV_FILE=.env.development node dist/server.js",
     "dev-development": "cross-env ENV_FILE=.env.development nodemon src/server.ts",
