@@ -3,3 +3,9 @@ export const USER_ROLE = Object.freeze({
     USER: 'User',
     VENDOR: 'Vendor',
 });
+
+export const LOGIN_TYPE = Object.freeze({
+    EMAIL: 'Email',
+    MOBILE: 'Mobile',
+    APPLE: 'Apple',
+});

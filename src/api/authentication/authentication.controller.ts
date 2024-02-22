@@ -3,12 +3,25 @@ const router = Router();
 import AuthenticationService from '../authentication/authentication.service';
 import asyncHandler from './../../middleware/asyncHandler.middleware';
 import validate from './../../middleware/validator.middleware';
-import { requestResetPassword, resetPassword, signup, changePassword, login } from './authentication.validation';
+import { requestResetPassword, resetPassword, signup, changePassword, login, resendOTP, verifyOTP } from './authentication.validation';
+import auth from './../../middleware/auth.middleware';
 
 router.post(
   '/signup',
   validate('body', signup),
   asyncHandler(AuthenticationService.signup)
+);
+
+router.post(
+  '/resendOTP',
+  validate('body', resendOTP),
+  asyncHandler(AuthenticationService.resendOTP)
+);
+
+router.post(
+  '/verifyOTP',
+  validate('body', verifyOTP),
+  asyncHandler(AuthenticationService.verifyOTP)
 );
 
 router.post(
@@ -31,6 +44,7 @@ router.post(
 
 router.post(
   '/changePassword',
+  auth,
   validate('body', changePassword),
   asyncHandler(AuthenticationService.changePassword)
 );

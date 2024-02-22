@@ -9,7 +9,7 @@ export interface UserInterface extends Document {
     dob: string;
     password: string;
     isAcceptPrivacyPolicy: boolean;
-    forgotPasswordToken: string;
+    iActive: boolean;
     profilePic: string;
     location: Location;
     address: Address;

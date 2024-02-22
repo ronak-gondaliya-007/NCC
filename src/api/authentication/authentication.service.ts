@@ -1,87 +1,201 @@
 import { Request, Response } from 'express';
 import CommonService from '../../utils/common';
-import { findOne, findOneAndUpdate, insertOne } from '../../utils/db';
-import config from '../../utils/config';
+import { deleteMany, findOne, findOneAndDelete, findOneAndUpdate, insertOne } from '../../utils/db';
 import { sendEmail } from '../../utils/email/email.send';
 import { IUser } from '../../interface/jwt.interface';
+import { LOGIN_TYPE } from '../../utils/const';
 
 class AuthenticationService {
     /** Create new account for vendor or user */
     async signup(req: Request, res: Response) {
         const payload = req.body;
 
-        // Validate Email Address
-        const validate = await CommonService.validateEmail(payload.email);
-        if (!validate) {
-            return res.status(200).json({ code: 400, message: 'Invalid Email Address.', success: true, data: {} });
+        let validate: boolean;
+        let query: any = {};
+
+        // Validate Email Address Or Mobile Number
+        if (payload.type == LOGIN_TYPE.EMAIL) {
+            validate = await CommonService.validateEmail(payload.email);
+            query = { email: payload.email?.toLowerCase() };
+
+            // Verification Password and Confirm Password
+            if (payload.password != payload.confirmPassword) {
+                return res
+                    .status(200)
+                    .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
+            }
+
+            payload.password = await CommonService.hashPassword(payload.password);
+        } else if (payload.type == LOGIN_TYPE.MOBILE) {
+            validate = await CommonService.validateMobileNumber(payload.mobile);
+            query = { mobile: payload.mobile };
         }
 
-        // Verification Password and Confirm Password
-        if (payload.password != payload.confirmPassword) {
-            return res
-                .status(200)
-                .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
+        if (!validate) {
+            return res.status(200).json({ code: 400, message: `Invalid ${payload.email ? 'email address' : 'mobile number'}.`, success: true, data: {} });
         }
 
         const userVerification = await findOne({
             collection: 'User',
-            query: { email: payload.email?.toLowerCase() }
+            query
         });
 
         if (userVerification) {
             return res
                 .status(200)
-                .json({ code: 400, message: 'User already exists with this email. Please use another email address.', success: true, data: {} });
+                .json({ code: 400, message: `User already exists with this ${payload.email ? 'email' : 'mobile number'}. Please use another ${payload.email ? 'email address' : 'mobile number'}.`, success: true, data: {} });
         }
-
-        payload.password = await CommonService.hashPassword(payload.password);
 
         const user = await insertOne({
             collection: 'User',
             document: payload
-        })
+        });
+
+        if (LOGIN_TYPE.MOBILE) {
+            const randomOTP = Math.floor(Math.random() * 90000) + 10000;
+            const otpData = await insertOne({
+                collection: 'OTP',
+                document: {
+                    user_id: user._id,
+                    otp: randomOTP
+                }
+            });
+
+            return res
+                .status(200)
+                .json({ code: 200, message: 'OTP sent successfully.', success: true, data: {} });
+        }
 
         return res
             .status(200)
             .json({ code: 200, message: 'User account created successfully.', success: true, data: user });
     }
 
+    /** Resend OTP */
+    async resendOTP(req: Request, res: Response) {
+        const payload = req.body;
+
+        const validEmail = await CommonService.validateEmail(payload.emailOrMobile);
+        const validMobile = await CommonService.validateMobileNumber(payload.emailOrMobile);
+
+        if (!validEmail && !validMobile) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number.`, success: true, data: {} });
+        }
+
+        const user = await findOne({
+            collection: 'User',
+            query: { $or: [{ email: payload.emailOrMobile?.toLowerCase() }, { mobile: payload.emailOrMobile }] }
+        });
+
+        if (!user) {
+            return res.status(200).json({ code: 404, message: `User not found.`, success: true, data: {} });
+        }
+
+        await deleteMany({ collection: 'OTP', query: { user_id: user._id } });
+
+        const randomOTP = Math.floor(Math.random() * 9000) + 1000;
+
+        const otpData = await insertOne({
+            collection: 'OTP',
+            document: {
+                user_id: user._id,
+                otp: randomOTP
+            }
+        });
+
+        return res.status(200).json({ code: 200, message: "OTP sent Successfully", success: true, data: {} });
+
+    }
+
+    /** Verification user OTP */
+    async verifyOTP(req: Request, res: Response) {
+        const payload = req.body;
+
+        const validEmail = await CommonService.validateEmail(payload.emailOrMobile);
+        const validMobile = await CommonService.validateMobileNumber(payload.emailOrMobile);
+
+        if (!validEmail && !validMobile) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number.`, success: true, data: {} });
+        }
+
+        const verifyUser = await findOne({
+            collection: 'User',
+            query: { $or: [{ email: payload.emailOrMobile?.toLowerCase() }, { mobile: payload.emailOrMobile }] }
+        });
+
+        if (!verifyUser) {
+            return res.status(200).json({ code: 404, message: `User not found.`, success: true, data: {} });
+        }
+
+        const verifyOTP = await findOne({
+            collection: 'OTP',
+            query: { user_id: verifyUser._id, otp: payload.otp }
+        });
+
+        if (!verifyOTP) {
+            return res.status(200).json({ code: 400, message: `OTP invalid or expired.`, success: true, data: {} });
+        }
+
+        let query: any = {};
+        let updateQuery: any = {};
+        if (verifyOTP.type == 0) {
+            query = { _id: verifyUser._id, onboardingStep: 0 }
+            updateQuery = { $set: { onboardingStep: 1 } }
+        } else {
+            query = { _id: verifyUser._id }
+        }
+
+        await findOneAndUpdate({
+            collection: 'User',
+            query,
+            update: updateQuery,
+            options: { new: true }
+        });
+
+        await findOneAndDelete({ collection: 'OTP', query: { user_id: verifyUser._id, otp: payload.otp } });
+        return res.status(200).json({ code: 200, message: "OTP verified Successfully", success: true, data: {} });
+    }
+
     /** Request for reset password mail */
     async requestResetPassword(req: Request, res: Response) {
         const payload = req.body;
 
+        const validEmail = await CommonService.validateEmail(payload.emailOrMobile);
+        const validMobile = await CommonService.validateMobileNumber(payload.emailOrMobile);
+
+        if (!validEmail && !validMobile) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number.`, success: true, data: {} });
+        }
+
         const user = await findOne({
             collection: 'User',
-            query: { email: payload.email?.toLowerCase() },
+            query: { $or: [{ email: payload.emailOrMobile?.toLowerCase() }, { mobile: payload.emailOrMobile }] },
         });
 
         if (!user) {
-            return res.status(200).json({ code: 404, message: 'User not exists at this moment.', success: true, data: {} });
+            return res.status(200).json({ code: 404, message: 'User not found.', success: true, data: {} });
         }
 
-        // To Generate Random Token
-        const passwordResetToken: any = await CommonService.generateRandomToken(config.CRYPTO.RANDOM_TOKEN);
-        console.log(passwordResetToken);
+        await deleteMany({ collection: 'OTP', query: { user_id: user._id } });
 
-        await findOneAndUpdate({
-            collection: 'User',
-            query: { _id: user?._id },
-            update: { $set: { forgotPasswordToken: passwordResetToken } },
-            options: { new: true },
+        const randomOTP = Math.floor(Math.random() * 9000) + 1000;
+
+        await insertOne({
+            collection: 'OTP',
+            document: {
+                user_id: user._id,
+                otp: randomOTP
+            }
         });
 
-        // Verification Email With Reset Token
-        const verificationLink = `${config.HOST
-            }/updatepassword?emailToken=${passwordResetToken}&email=${encodeURIComponent(payload.email)}`;
-
         const emailOptions = {
-            link: verificationLink,
-            to: payload.email,
+            link: randomOTP,
+            to: payload.emailOrMobile,
             subject: 'Reset Password Link',
             templatePath: process.cwd() + '/src/utils/email/templates/reset-password-mail.handlebars',
             templateData: {
                 username: 'John Doe',
-                passwordResetLink: verificationLink,
+                passwordResetLink: randomOTP,
             },
         };
 
@@ -97,17 +211,20 @@ class AuthenticationService {
     async resetPassword(req: Request, res: Response) {
         const payload = req.body;
 
+        const validEmail = await CommonService.validateEmail(payload.emailOrMobile);
+        const validMobile = await CommonService.validateMobileNumber(payload.emailOrMobile);
+
+        if (!validEmail && !validMobile) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number.`, success: true, data: {} });
+        }
+
         const user = await findOne({
             collection: 'User',
-            query: { email: payload.email?.toLowerCase() },
+            query: { $or: [{ email: payload.emailOrMobile?.toLowerCase() }, { mobile: payload.emailOrMobile }] },
         });
 
         if (!user) {
-            return res.status(200).json({ code: 404, message: 'User not exists at this moment.', success: true, data: {} });
-        }
-
-        if (user?.forgotPasswordToken !== payload.emailToken) {
-            return res.status(200).json({ code: 400, message: 'Reset password link does not exists.', success: true, data: {} });
+            return res.status(200).json({ code: 404, message: 'User not found.', success: true, data: {} });
         }
 
         const verifiedPassword = await CommonService.comparePassword(payload.newPassword, user?.password);
@@ -129,7 +246,7 @@ class AuthenticationService {
         await findOneAndUpdate({
             collection: 'User',
             query: { _id: user?._id },
-            update: { $set: { forgotPasswordToken: '', password: encrytedPassword } },
+            update: { $set: { password: encrytedPassword } },
             options: { new: true },
         });
 
@@ -140,15 +257,16 @@ class AuthenticationService {
     async login(req: Request, res: Response) {
         const payload = req.body;
 
-        // Validate Email Address
-        const validate = await CommonService.validateEmail(payload.email?.toLowerCase());
-        if (!validate) {
-            return res.status(200).json({ code: 400, message: 'Invalid Email Address.', error: true, data: {} });
+        const validEmail = await CommonService.validateEmail(payload.emailOrMobile);
+        const validMobile = await CommonService.validateMobileNumber(payload.emailOrMobile);
+
+        if (!validEmail && !validMobile) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number.`, success: true, data: {} });
         }
 
         const user = await findOne({
             collection: 'User',
-            query: { email: payload.email?.toLowerCase() },
+            query: { $or: [{ email: payload.emailOrMobile?.toLowerCase() }, { mobile: payload.emailOrMobile }] },
         });
 
         if (!user) {
@@ -163,17 +281,19 @@ class AuthenticationService {
 
         const accessToken = await CommonService.issueToken({
             userId: user?._id,
+            username: user?.firstName + " " + user?.lastName,
             email: user?.email,
+            mobile: user?.mobile,
             role: user?.role,
         });
         // const encryptAuthToken = await middleware.encryptAuthData(accessToken);
 
         const result: object = {
-            _id:user._id,
-            firstName:user.firstName,
-            lastName:user.lastName,
-            email:user.email,
-            profilePic:user.profilePic,
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            profilePic: user.profilePic,
             accessToken: accessToken,
         };
 

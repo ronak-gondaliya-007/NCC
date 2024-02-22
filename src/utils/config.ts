@@ -31,6 +31,9 @@ export default {
   },
   BCRYPT_SALT:  Number(process.env.BCRYPT_SALT),
   PRIVATE_KEY: String(process.env.PRIVATE_KEY),
-  JWT_SECRET: String(process.env.JWT_SECRET),
+  JWT:{
+    JWT_SECRET: String(process.env.JWT_SECRET),
+    JWT_EXPIRES_IN: String(process.env.JWT_EXPIRES_IN),
+  },
   HOST: process.env.HOST
 };
