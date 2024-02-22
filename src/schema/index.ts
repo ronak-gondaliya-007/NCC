@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import UserSchema from "./user";
+import UserSchema from "./user.model";
 import { UserInterface } from "./../interface/user.interface";
 import OTPSchema from "./OTPVerify.mdel";
 import { OTPInterface } from "./../interface/OTPVerify.interface";
