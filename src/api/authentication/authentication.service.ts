@@ -281,7 +281,7 @@ class AuthenticationService {
 
         const accessToken = await CommonService.issueToken({
             userId: user?._id,
-            username: user?.firstName + " " + user?.lastName,
+            username: user?.fullName,
             email: user?.email,
             mobile: user?.mobile,
             role: user?.role,
@@ -290,9 +290,9 @@ class AuthenticationService {
 
         const result: object = {
             _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            fullName: user.fullName,
             email: user.email,
+            mobile: user.mobile,
             profilePic: user.profilePic,
             accessToken: accessToken,
         };

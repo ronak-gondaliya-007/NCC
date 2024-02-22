@@ -4,8 +4,7 @@ import { USER_ROLE } from '../utils/const';
 const UserSchema = new mongoose.Schema(
     {
         role: { type: String, enum: Object.values(USER_ROLE), required: true },
-        firstName: { type: String, default: '' },
-        lastName: { type: String, default: '' },
+        fullName: { type: String, default: '' },
         email: { type: String, lowercase: true, unique: true },
         mobile: { type: String, unique: true, trim: true, default: '' },
         gender: { type: String, default: '' },

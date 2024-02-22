@@ -3,10 +3,7 @@ import jwt from '../utils/jwt.utils';
 
 async function auth(req: any, res: Response, next: NextFunction) {
   try {
-    console.log(req.headers);
-    
     const token = req.headers['Authorization'] || req.headers['authorization'];
-    console.log(token);
     
     // const decryptToken = await middleaware.decryptAuthData(token);
 
