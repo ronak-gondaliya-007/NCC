@@ -9,27 +9,19 @@ class AuthenticationService {
     /** Create new account for vendor or user */
     async signup(req: Request, res: Response) {
         const payload = req.body;
+        
+        // Validate Email Address
+        const validate = await CommonService.validateEmail(payload.email);
+        const query = { email: payload.email?.toLowerCase() };
 
-        let validate: boolean;
-        let query: any = {};
-
-        // Validate Email Address Or Mobile Number
-        if (payload.type == LOGIN_TYPE.EMAIL) {
-            validate = await CommonService.validateEmail(payload.email);
-            query = { email: payload.email?.toLowerCase() };
-
-            // Verification Password and Confirm Password
-            if (payload.password != payload.confirmPassword) {
-                return res
-                    .status(200)
-                    .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
-            }
-
-            payload.password = await CommonService.hashPassword(payload.password);
-        } else if (payload.type == LOGIN_TYPE.MOBILE) {
-            validate = await CommonService.validateMobileNumber(payload.mobile);
-            query = { mobile: payload.mobile };
+        // Verification Password and Confirm Password
+        if (payload.password != payload.confirmPassword) {
+            return res
+                .status(200)
+                .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
         }
+
+        payload.password = await CommonService.hashPassword(payload.password);
 
         if (!validate) {
             return res.status(200).json({ code: 400, message: `Invalid ${payload.email ? 'email address' : 'mobile number'}.`, success: true, data: {} });
@@ -50,21 +42,6 @@ class AuthenticationService {
             collection: 'User',
             document: payload
         });
-
-        if (LOGIN_TYPE.MOBILE) {
-            const randomOTP = Math.floor(Math.random() * 90000) + 10000;
-            const otpData = await insertOne({
-                collection: 'OTP',
-                document: {
-                    user_id: user._id,
-                    otp: randomOTP
-                }
-            });
-
-            return res
-                .status(200)
-                .json({ code: 200, message: 'OTP sent successfully.', success: true, data: {} });
-        }
 
         return res
             .status(200)

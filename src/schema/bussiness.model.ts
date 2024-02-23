@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { USER_TYPE } from './../utils/const';
 
 const BussinessSchema = new mongoose.Schema(
     {
@@ -19,11 +20,15 @@ const BussinessSchema = new mongoose.Schema(
                 coordinates: { type: [Number], default: [0, 0] },
             },
         },
-        category: [],
-        user_type: []
+        category: { type: [String], validate: [validateCategories, '{PATH} exceeds the limit of 3 categories.'] },
+        userType: { type: String, enum: Object.values(USER_TYPE), required: true },
     },
     { timestamps: true }
 );
+
+function validateCategories(val) {
+    return val.length <= 3;
+  }
 
 BussinessSchema.index({ "address.location": '2dsphere' });
 
