@@ -13,6 +13,17 @@ export interface UserInterface extends Document {
     profilePic: string;
     location: Location;
     address: Address;
+    onboardingStep: number;
+    businessName?: string;
+    category?: string[];
+    vendorType?: string[];
+    aboutBusiness?: string;
+    socialMediaLinks?: {
+      twitter?: string;
+      linkedin?: string;
+      instagram?: string;
+      youtube?: string;
+    };
 }
 
 interface Location {

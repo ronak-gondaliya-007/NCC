@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import paginate from 'mongoose-paginate-v2';
 
 const OTPSchema = new mongoose.Schema(
     {
@@ -11,5 +12,8 @@ const OTPSchema = new mongoose.Schema(
 );
 
 OTPSchema.index({ "user_id": 1 });
+
+// paginate with this plugin
+OTPSchema.plugin(paginate);
 
 export default OTPSchema;

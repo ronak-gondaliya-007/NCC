@@ -35,5 +35,11 @@ export default {
     JWT_SECRET: String(process.env.JWT_SECRET),
     JWT_EXPIRES_IN: String(process.env.JWT_EXPIRES_IN),
   },
-  HOST: process.env.HOST
+  HOST: process.env.HOST,
+  OAUTH:{
+    CLIENT_ID: String(process.env.CLIENT_ID),
+    CLIENT_SECRET: String(process.env.CLIENT_SECRET),
+    AUTHENTICATION_URL: String(process.env.AUTHENTICATION_URL),
+    TOKEN_URL: String(process.env.TOKEN_URL),
+  },
 };

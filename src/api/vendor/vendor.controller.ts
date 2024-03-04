@@ -7,7 +7,7 @@ import { addPersonalDetail } from './vendor.validation';
 import auth from './../../middleware/auth.middleware';
 
 router.post(
-    '/onboarding/step/1',
+    '/onboarding/step/personal',
     validate('body', addPersonalDetail),
     asyncHandler(VendorService.addPersonalDetail)
 );

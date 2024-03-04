@@ -11,7 +11,6 @@ const asyncHandler = (fn: AsyncHandlerFunction) => (req: Request, res: Response,
         err: error.keyValue,
       });
     } else {
-      console.log(error);
       return res.status(500).send({
         message: 'Internal Server Error',
         error,
