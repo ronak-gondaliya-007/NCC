@@ -36,10 +36,23 @@ export default {
     JWT_EXPIRES_IN: String(process.env.JWT_EXPIRES_IN),
   },
   HOST: process.env.HOST,
-  OAUTH:{
-    CLIENT_ID: String(process.env.CLIENT_ID),
-    CLIENT_SECRET: String(process.env.CLIENT_SECRET),
-    AUTHENTICATION_URL: String(process.env.AUTHENTICATION_URL),
-    TOKEN_URL: String(process.env.TOKEN_URL),
+  GOOGLE_OAUTH:{
+    CLIENT_ID: String(process.env.G_CLIENT_ID),
+    CLIENT_SECRET: String(process.env.G_CLIENT_SECRET),
+    AUTHENTICATION_URL: String(process.env.G_AUTHENTICATION_URL),
+    TOKEN_URL: String(process.env.G_TOKEN_URL),
+    REDIRECT_URL: String(process.env.G_REDIRECT_URL),
+  },
+  FACEBOOK_OAUTH:{
+    CLIENT_ID: String(process.env.F_CLIENT_ID),
+    CLIENT_SECRET: String(process.env.F_CLIENT_SECRET),
+    REDIRECT_URL: String(process.env.F_REDIRECT_URL),
+  },
+  APPLE_OAUTH:{
+    CLIENT_ID: String(process.env.A_CLIENT_ID),
+    TEAM_ID: String(process.env.A_TEAM_ID),
+    KEY_ID: String(process.env.A_KEY_ID),
+    PRIVATE_KEY_PATH: String(process.env.A_KEY_PATH),
+    REDIRECT_URL: String(process.env.A_REDIRECT_URL),
   },
 };

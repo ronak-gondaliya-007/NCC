@@ -6,13 +6,17 @@ import { IUser } from '../../interface/jwt.interface';
 import { LOGIN_TYPE } from '../../utils/const';
 
 class AuthenticationService {
-    /** Create new account for vendor or user */
+    /** Create new account for vendor */
     async signup(req: Request, res: Response) {
         const payload = req.body;
-        
+
         // Validate Email Address
         const validate = await CommonService.validateEmail(payload.email);
-        const query = { email: payload.email?.toLowerCase() };
+        const query = { email: payload.email?.toLowerCase(), mobile: payload.mobile };
+
+        if (!validate) {
+            return res.status(200).json({ code: 400, message: `Invalid email address or mobile number already in use.`, success: true, data: {} });
+        }
 
         // Verification Password and Confirm Password
         if (payload.password != payload.confirmPassword) {
@@ -23,10 +27,6 @@ class AuthenticationService {
 
         payload.password = await CommonService.hashPassword(payload.password);
 
-        if (!validate) {
-            return res.status(200).json({ code: 400, message: `Invalid ${payload.email ? 'email address' : 'mobile number'}.`, success: true, data: {} });
-        }
-
         const userVerification = await findOne({
             collection: 'User',
             query
@@ -35,7 +35,7 @@ class AuthenticationService {
         if (userVerification) {
             return res
                 .status(200)
-                .json({ code: 400, message: `User already exists with this ${payload.email ? 'email' : 'mobile number'}. Please use another ${payload.email ? 'email address' : 'mobile number'}.`, success: true, data: {} });
+                .json({ code: 400, message: `User already exists with this email or mobile number. Please use another email or mobile number.`, success: true, data: {} });
         }
 
         const user = await insertOne({

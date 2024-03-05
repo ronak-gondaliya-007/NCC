@@ -5,6 +5,9 @@ import paginate from 'mongoose-paginate-v2';
 
 const UserSchema = new mongoose.Schema(
     {
+        googleId: { type: String },
+        facebookId: { type: String },
+        appleId: { type: String },
         role: { type: String, enum: Object.values(USER_ROLE), required: true },
         firstName: { type: String, default: '' },
         lastName: { type: String, default: '' },
@@ -30,7 +33,7 @@ const UserSchema = new mongoose.Schema(
         },
         profilePic: { type: String, default: '' },
         referralCode: { type: String },
-        onboardingStep: { type: Number, default: 0 },
+        onboardingStep: { type: Number },
         businessName: { type: String },
         category: [{ type: String }],
         vendorType: [{ type: String }],
@@ -40,7 +43,7 @@ const UserSchema = new mongoose.Schema(
             linkedin: { type: String, validate: { validator: validator.isURL, message: 'Invalid URL for LinkedIn' } },
             instagram: { type: String, validate: { validator: validator.isURL, message: 'Invalid URL for Instagram' } },
             youtube: { type: String, validate: { validator: validator.isURL, message: 'Invalid URL for YouTube' } },
-          },
+        },
     },
     { timestamps: true }
 );

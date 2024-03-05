@@ -5,6 +5,7 @@ import mongooseConnect from "./connection/mongo.connection";
 import fs from "fs";
 import http from "http";
 import https from "https";
+import './config/passport';
 
 let app = express();
 
