@@ -71,6 +71,19 @@ class AuthenticationService {
                 }
             });
 
+            const emailOptions = {
+                to: payload.email,
+                subject: 'Email Verification OTP',
+                templatePath: process.cwd() + '/src/utils/email/templates/user-email-verification.handlebars',
+                templateData: {
+                    username: 'John Doe',
+                    otp: `${randomOTP}`,
+                },
+            };
+
+            // Send Email With verification Link
+            sendEmail(emailOptions);
+
             return res.status(200).json({ code: 200, message: "OTP sent successfully.", success: true, data: otpData });
         }
 
@@ -144,8 +157,8 @@ class AuthenticationService {
         let query: any = {};
         let updateQuery: any = {};
         if (verifyOTP.type == 0) {
-            query = { _id: verifyUser._id, onboardingStep: 0 }
-            updateQuery = { $set: { onboardingStep: 1 } }
+            query = { _id: verifyUser._id, isActive: true }
+            updateQuery = { $set: { isVerified: true } }
         } else {
             query = { _id: verifyUser._id }
         }
