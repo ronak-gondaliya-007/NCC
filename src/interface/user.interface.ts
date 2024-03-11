@@ -10,6 +10,8 @@ export interface UserInterface extends Document {
     language: string;
     isAcceptPrivacyPolicy: boolean;
     iActive: boolean;
+    status: string;
+    isVerified: boolean;
     profilePic: string;
     coverPic: string[];
     location: Location;

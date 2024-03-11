@@ -3,7 +3,7 @@ const router = Router();
 import AuthenticationService from '../authentication/authentication.service';
 import asyncHandler from './../../middleware/asyncHandler.middleware';
 import validate from './../../middleware/validator.middleware';
-import { requestResetPassword, resetPassword, signup, changePassword, login, resendOTP, verifyOTP } from './authentication.validation';
+import { requestResetPassword, resetPassword, signup, changePassword, login, resendOTP, verifyOTP, updateUserAppLanguage } from './authentication.validation';
 import auth from './../../middleware/auth.middleware';
 
 router.post(
@@ -47,6 +47,13 @@ router.post(
   auth,
   validate('body', changePassword),
   asyncHandler(AuthenticationService.changePassword)
+);
+
+router.post(
+  '/update/language',
+  auth,
+  validate('body', updateUserAppLanguage),
+  asyncHandler(AuthenticationService.updateUserAppLanguage)
 );
 
 export default router;

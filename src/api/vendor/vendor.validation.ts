@@ -10,7 +10,8 @@ export const addPersonalDetail = Joi.object({
   countryISO: Joi.string().required(),
   province: Joi.string().required(),
   provinceISO: Joi.string().required(),
-  city: Joi.string().required()
+  city: Joi.string().required(),
+  zipCode: Joi.string().required()
 });
 
 const socialMediaLinks = Joi.object({

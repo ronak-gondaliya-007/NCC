@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import * as validator from 'validator';
-import { USER_ROLE } from '../utils/const';
+import { USER_ROLE, VENDOR_ACCOUNT_STATUS } from '../utils/const';
 import paginate from 'mongoose-paginate-v2';
 
 const UserSchema = new mongoose.Schema(
@@ -17,7 +17,8 @@ const UserSchema = new mongoose.Schema(
         password: { type: String },
         language: { type: String, default: 'English' },
         isActive: { type: Boolean, default: false },
-        isApproved: { type: Boolean, default: false },
+        status: { type: String, enum: Object.values(VENDOR_ACCOUNT_STATUS) },
+        isVerified: { type: Boolean },
         isAcceptPrivacyPolicy: { type: Boolean, default: false },
         address: {
             address: { type: String },
@@ -63,6 +64,14 @@ UserSchema.pre('save', function (next) {
         this.socialMediaLinks.linkedin = '';
         this.socialMediaLinks.instagram = '';
         this.socialMediaLinks.youtube = '';
+        this.status = VENDOR_ACCOUNT_STATUS.PENDING;
+    } else if (this.role == USER_ROLE.USER) {
+        this.coverPic = undefined;
+        this.category = undefined;
+        this.vendorType = undefined;
+        this.socialMediaLinks = undefined;
+        this.isVerified = false;
+        this.isActive = true;
     }
     next();
 });

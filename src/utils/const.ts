@@ -12,6 +12,12 @@ export const LOGIN_TYPE = Object.freeze({
     APPLE: 'Apple',
 });
 
+export const VENDOR_ACCOUNT_STATUS = Object.freeze({
+    PENDING: 'Pending',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+});
+
 export const DOCUMENT_SIZE = Object.freeze({
     PROFILE: config.DOCUMENT_SIZE.PROFILE,
     COVER: config.DOCUMENT_SIZE.COVER,

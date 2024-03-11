@@ -40,3 +40,7 @@ export const changePassword = Joi.object({
   newPassword: Joi.string().required(),
   confirmPassword: Joi.string().required(),
 });
+
+export const updateUserAppLanguage = Joi.object({
+  language: Joi.string().required(),
+});

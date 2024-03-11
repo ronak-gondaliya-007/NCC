@@ -3,7 +3,8 @@ import CommonService from '../../utils/common';
 import { deleteMany, findOne, findOneAndDelete, findOneAndUpdate, insertOne } from '../../utils/db';
 import { sendEmail } from '../../utils/email/email.send';
 import { IUser } from '../../interface/jwt.interface';
-import { LOGIN_TYPE } from '../../utils/const';
+import { LOGIN_TYPE, USER_ROLE } from '../../utils/const';
+import config from '../../utils/config';
 
 class AuthenticationService {
     /** Create new account for vendor */
@@ -36,6 +37,14 @@ class AuthenticationService {
                 .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
         }
 
+        const isStrongPassword = await CommonService.isStrongPassword(payload.password);
+
+        if (!isStrongPassword) {
+            return res
+                .status(200)
+                .json({ code: 400, message: 'Please ensure your password is a minimum of 10 characters long and includes a combination of uppercase letters, symbols, and other characters for enhanced security.', error: true, data: {} });
+        }
+
         payload.password = await CommonService.hashPassword(payload.password);
 
         const user = await insertOne({
@@ -43,11 +52,28 @@ class AuthenticationService {
             document: payload
         });
 
-        const token = await CommonService.issueToken({ userId: user._id, email: user.email, mobile: user.payload, role: user.role });
+        if (payload.role == USER_ROLE.VENDOR) {
+            const token = await CommonService.issueToken({ userId: user._id, email: user.email, mobile: user.payload, role: user.role });
 
-        return res
-            .status(200)
-            .json({ code: 200, message: 'User account created successfully.', success: true, data: { user, accessToken: token } });
+            return res
+                .status(200)
+                .json({ code: 200, message: 'User account created successfully.', success: true, data: { user, accessToken: token } });
+        } else {
+            await deleteMany({ collection: 'OTP', query: { user_id: user._id, type: 0 } });
+
+            const randomOTP = Math.floor(Math.random() * 9000) + 1000;
+
+            const otpData = await insertOne({
+                collection: 'OTP',
+                document: {
+                    user_id: user._id,
+                    otp: randomOTP
+                }
+            });
+
+            return res.status(200).json({ code: 200, message: "OTP sent successfully.", success: true, data: otpData });
+        }
+
     }
 
     /** Resend OTP */
@@ -220,6 +246,14 @@ class AuthenticationService {
                 .json({ code: 400, message: 'New password must be the same as confirm password.', success: true, data: {} });
         }
 
+        const isStrongPassword = await CommonService.isStrongPassword(payload.newPassword);
+
+        if (!isStrongPassword) {
+            return res
+                .status(200)
+                .json({ code: 400, message: 'Please ensure your password is a minimum of 10 characters long and includes a combination of uppercase letters, symbols, and other characters for enhanced security.', error: true, data: {} });
+        }
+
         const encrytedPassword: any = await CommonService.hashPassword(payload.newPassword);
 
         await findOneAndUpdate({
@@ -260,7 +294,7 @@ class AuthenticationService {
 
         const accessToken = await CommonService.issueToken({
             userId: user?._id,
-            username: user?.fullName,
+            username: user?.firstName + " " + user.lastName,
             email: user?.email,
             mobile: user?.mobile,
             role: user?.role,
@@ -269,10 +303,10 @@ class AuthenticationService {
 
         const result: object = {
             _id: user._id,
-            fullName: user.fullName,
+            fullName: user?.firstName + " " + user.lastName,
             email: user.email,
             mobile: user.mobile,
-            profilePic: user.profilePic,
+            profilePic: config.AWS.S3_URL + user.profilePic,
             accessToken: accessToken,
         };
 
@@ -283,6 +317,15 @@ class AuthenticationService {
     async changePassword(req: Request & { user: IUser }, res: Response) {
         const request = req.user;
         const payload = req.body;
+
+        const user = await findOne({
+            collection: 'User',
+            query: { _id: request.userId },
+        });
+
+        if (!user) {
+            return res.status(200).json({ code: 404, message: 'User not found.', error: true, data: {} });
+        }
 
         if (payload.oldPassword == payload.newPassword) {
             return res
@@ -296,19 +339,18 @@ class AuthenticationService {
                 .json({ code: 400, message: 'Confirm password must be the same as new password.', error: true, data: {} });
         }
 
-        const user = await findOne({
-            collection: 'User',
-            query: { _id: request.userId },
-        });
+        const isStrongPassword = await CommonService.isStrongPassword(payload.newPassword);
 
-        if (!user) {
-            return res.status(200).json({ code: 404, message: 'User not exists at this moment.', error: true, data: {} });
+        if (!isStrongPassword) {
+            return res
+                .status(200)
+                .json({ code: 400, message: 'Please ensure your password is a minimum of 10 characters long and includes a combination of uppercase letters, symbols, and other characters for enhanced security.', error: true, data: {} });
         }
 
         const verifyPassword = await CommonService.comparePassword(payload.oldPassword, user?.password);
 
         if (!verifyPassword) {
-            return res.status(200).json({ cd: 400, message: 'Old password do not match.', error: true, data: {} });
+            return res.status(200).json({ code: 400, message: 'Old password do not match.', error: true, data: {} });
         }
 
         const encryptPassword = await CommonService.hashPassword(payload.newPassword);
@@ -323,6 +365,38 @@ class AuthenticationService {
         });
 
         return res.status(200).json({ code: 200, message: 'Password Changed Successfully.', success: true, data: {} });
+    }
+
+    /** Update user app language */
+    async updateUserAppLanguage(req: Request & { user: IUser }, res: Response) {
+        const request = req.user;
+        const payload = req.body;
+
+        const userExists = await findOne({
+            collection: 'User',
+            query: { _id: request?.userId },
+        });
+
+        if (!userExists) {
+            return res.status(200).json({ code: 404, message: 'User not found.', error: true, data: {} });
+        }
+
+        if (!userExists.isApproved) {
+            return res.status(200).json({ code: 400, message: 'Your account approval pending. Please await confirmation from the administrator.', error: true, data: {} });
+        }
+
+        if (!userExists.isActive) {
+            return res.status(200).json({ code: 400, message: 'Your account has been temporary disabled by the administrator.', error: true, data: {} });
+        }
+
+        await findOneAndUpdate({
+            collection: 'User',
+            query: { _id: request.userId },
+            update: { $set: payload },
+            options: { new: true }
+        });
+
+        return res.status(200).json({ code: 200, message: 'Your app language updated successfully.', success: true, data: {} });
     }
 }
 

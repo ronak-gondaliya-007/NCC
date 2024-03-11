@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import CommonService from '../../utils/common';
 import { findOne, findOneAndUpdate } from '../../utils/db';
 import { IUser } from '../../interface/jwt.interface';
-import { DOCUMENT, DOCUMENT_SIZE } from '../../utils/const';
+import { DOCUMENT, DOCUMENT_SIZE, VENDOR_ACCOUNT_STATUS } from '../../utils/const';
 import { uploadToS3, validateFile } from '../../middleware/multer.middleware';
 import config from '../../utils/config';
 
@@ -72,6 +72,7 @@ class VendorService {
             province: payload.province,
             provinceISO: payload.provinceISO,
             city: payload.city,
+            zipCode: payload.zipCode,
             // location: { type: 'Point', coordinates: [payload.long, payload.lat] }
         }
 
@@ -224,8 +225,8 @@ class VendorService {
             return res.status(200).json({ code: 404, message: 'User not found.', error: true, data: {} });
         }
 
-        if (!userExists.isApproved) {
-            return res.status(200).json({ code: 400, message: 'Your account approval pending. Please await confirmation from the administrator.', error: true, data: {} });
+        if (userExists.status != VENDOR_ACCOUNT_STATUS.APPROVED) {
+            return res.status(200).json({ code: 400, message: `Your account approval ${userExists.status}. Please await confirmation from the administrator.`, error: true, data: {} });
         }
 
         if (!userExists.isActive) {
