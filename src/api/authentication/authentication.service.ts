@@ -18,15 +18,6 @@ class AuthenticationService {
             return res.status(200).json({ code: 400, message: `Invalid email address or mobile number already in use.`, success: true, data: {} });
         }
 
-        // Verification Password and Confirm Password
-        if (payload.password != payload.confirmPassword) {
-            return res
-                .status(200)
-                .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
-        }
-
-        payload.password = await CommonService.hashPassword(payload.password);
-
         const userVerification = await findOne({
             collection: 'User',
             query
@@ -38,14 +29,25 @@ class AuthenticationService {
                 .json({ code: 400, message: `User already exists with this email or mobile number. Please use another email or mobile number.`, success: true, data: {} });
         }
 
+        // Verification Password and Confirm Password
+        if (payload.password != payload.confirmPassword) {
+            return res
+                .status(200)
+                .json({ code: 400, message: 'Confirm password must be the same as password.', success: true, data: {} });
+        }
+
+        payload.password = await CommonService.hashPassword(payload.password);
+
         const user = await insertOne({
             collection: 'User',
             document: payload
         });
 
+        const token = await CommonService.issueToken({ userId: user._id, email: user.email, mobile: user.payload, role: user.role });
+
         return res
             .status(200)
-            .json({ code: 200, message: 'User account created successfully.', success: true, data: user });
+            .json({ code: 200, message: 'User account created successfully.', success: true, data: { user, accessToken: token } });
     }
 
     /** Resend OTP */

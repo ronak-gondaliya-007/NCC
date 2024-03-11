@@ -14,9 +14,10 @@ const UserSchema = new mongoose.Schema(
         email: { type: String, lowercase: true, unique: true },
         mobile: { type: String, unique: true, trim: true, default: '' },
         gender: { type: String },
-        dob: { type: Date, default: null },
         password: { type: String },
-        iActive: { type: Boolean, default: true },
+        language: { type: String, default: 'English' },
+        isActive: { type: Boolean, default: false },
+        isApproved: { type: Boolean, default: false },
         isAcceptPrivacyPolicy: { type: Boolean, default: false },
         address: {
             address: { type: String },
@@ -25,13 +26,14 @@ const UserSchema = new mongoose.Schema(
             country: { type: String },
             zipCode: { type: String },
             countryISO: { type: String },
-            stateISO: { type: String },
+            provinceISO: { type: String },
             location: {
                 type: { type: String, default: "Point" },
                 coordinates: { type: [Number], default: [0, 0] },
             },
         },
         profilePic: { type: String, default: '' },
+        coverPic: [{ type: String }],
         referralCode: { type: String },
         onboardingStep: { type: Number },
         businessName: { type: String },
@@ -44,9 +46,26 @@ const UserSchema = new mongoose.Schema(
             instagram: { type: String, validate: { validator: validator.isURL, message: 'Invalid URL for Instagram' } },
             youtube: { type: String, validate: { validator: validator.isURL, message: 'Invalid URL for YouTube' } },
         },
+        activationDate: { type: Date, default: null },
+        deactivationDate: { type: Date, default: null },
     },
     { timestamps: true }
 );
+
+UserSchema.pre('save', function (next) {
+    if (this.role == USER_ROLE.VENDOR) {
+        this.onboardingStep = 0;
+        this.businessName = '';
+        this.category = [];
+        this.vendorType = [];
+        this.aboutBusiness = '';
+        this.socialMediaLinks.twitter = '';
+        this.socialMediaLinks.linkedin = '';
+        this.socialMediaLinks.instagram = '';
+        this.socialMediaLinks.youtube = '';
+    }
+    next();
+});
 
 UserSchema.index({ "address.location": '2dsphere' });
 

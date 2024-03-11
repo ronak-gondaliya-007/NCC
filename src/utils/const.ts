@@ -1,3 +1,5 @@
+import config from "./config";
+
 export const USER_ROLE = Object.freeze({
     SUPER_ADMIN: 'Super Admin',
     USER: 'User',
@@ -10,8 +12,12 @@ export const LOGIN_TYPE = Object.freeze({
     APPLE: 'Apple',
 });
 
-export const USER_TYPE = Object.freeze({
-    VOLUNTEER: 'Volunteers',
-    NGO: 'Non Profit Organization',
-    BUSSINESS: 'Commercial Service Provider',
+export const DOCUMENT_SIZE = Object.freeze({
+    PROFILE: config.DOCUMENT_SIZE.PROFILE,
+    COVER: config.DOCUMENT_SIZE.COVER,
+});
+
+export const DOCUMENT = Object.freeze({
+    PROFILE: config.DOCUMENT.PROFILE,
+    COVER: config.DOCUMENT.COVER,
 });

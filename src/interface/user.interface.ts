@@ -6,11 +6,12 @@ export interface UserInterface extends Document {
     lastName: string;
     email: string;
     mobile: string;
-    dob: string;
     password: string;
+    language: string;
     isAcceptPrivacyPolicy: boolean;
     iActive: boolean;
     profilePic: string;
+    coverPic: string[];
     location: Location;
     address: Address;
     onboardingStep: number;
@@ -24,6 +25,8 @@ export interface UserInterface extends Document {
       instagram?: string;
       youtube?: string;
     };
+    activationDate: Date;
+    deactivationDate: Date;
 }
 
 interface Location {
@@ -39,5 +42,5 @@ interface Address {
     country: string;
     zipCode: string;
     countryISO: string;
-    stateISO: string;
+    provinceISO: string;
 }

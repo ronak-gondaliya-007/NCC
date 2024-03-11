@@ -55,4 +55,19 @@ export default {
     PRIVATE_KEY_PATH: String(process.env.A_KEY_PATH),
     REDIRECT_URL: String(process.env.A_REDIRECT_URL),
   },
+  AWS: {
+    S3_URL: String(process.env.S3_URL),
+    S3_BUCKET_URL: String(process.env.S3_BUCKET_URL),
+    ACCESS_KEY: String(process.env.ACCESS_KEY),
+    SECRET_KEY: String(process.env.SECRET_KEY),
+    REGION: String(process.env.REGION),
+  },
+  DOCUMENT_SIZE: {
+    PROFILE: Number(process.env.PROFILE_SIZE),
+    COVER: Number(process.env.COVER_SIZE)
+  },
+  DOCUMENT:{
+    PROFILE: process.env.PROFILE.split(','),
+    COVER: process.env.COVER.split(',')
+  }
 };
